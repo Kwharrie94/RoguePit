@@ -19,9 +19,18 @@ static cD3DManager* d3dMgr = cD3DManager::getInstance();
 static cD3DXSpriteMgr* d3dxSRMgr = cD3DXSpriteMgr::getInstance();
 	
 D3DXVECTOR2 playerTrans = D3DXVECTOR2(300,300);
+D3DXVECTOR2 enemyTrans = D3DXVECTOR2(300,10);
+
 vector<cEnemy*> aEnemy;
 vector<cEnemy*>::iterator iter;
 vector<cEnemy*>::iterator index;
+
+RECT clientBounds;
+
+//Bool variables used to determine the current stae of the game
+bool IntroState = true;
+bool GameState = false;
+bool EndState = false;
 
 
 LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
@@ -31,22 +40,28 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 	{
 		case WM_KEYDOWN:
 			{
-				if (wParam == 'A')
+				if(wParam == 'A' && IntroState == true) 
+				{
+					GameState = true;
+					IntroState = false;
+					return 0;
+				}
+				if (wParam == 'A' && GameState == true)
 				{
 					playerTrans.x -= 10.0f;
 					return 0;
 				}
-				if (wParam == 'W')
+				if (wParam == 'W' && GameState == true)
 				{
 					playerTrans.y -= 10.0f;
 					return 0;
 				}
-					if (wParam == 'S')
+					if (wParam == 'S' && GameState == true)
 				{
 					playerTrans.y += 10.0f;
 					return 0;
 				}
-				if (wParam == 'D')
+				if (wParam == 'D' && GameState == true)
 				{
 					playerTrans.x += 10.0f;
 					return 0;
@@ -125,6 +140,23 @@ int WINAPI WinMain( HINSTANCE hInstance, HINSTANCE hPrevInstance, LPTSTR lpCmdLi
 	if ( !d3dxSRMgr->initD3DXSpriteMgr(d3dMgr->getTheD3DDevice()))
 		return false;
 
+	// Grab the frequency of the high def timer
+	__int64 freq = 0;				// measured in counts per second;
+	QueryPerformanceFrequency((LARGE_INTEGER*)&freq);
+	float sPC = 1.0f / (float)freq;			// number of seconds per count
+
+	__int64 currentTime = 0;				// current time measured in counts per second;
+	__int64 previousTime = 0;				// previous time measured in counts per second;
+
+	float numFrames   = 0.0f;				// Used to hold the number of frames
+	float timeElapsed = 0.0f;				// cumulative elapsed time
+
+	GetClientRect(wndHandle,&clientBounds);
+
+	float fpsRate = 1.0f/25.0f;
+
+	D3DXVECTOR3 aenemyPos;
+
 	LPDIRECT3DSURFACE9 aSurface;				// the Direct3D surface
 	LPDIRECT3DSURFACE9 theBackbuffer = NULL;  // This will hold the back buffer
 	
@@ -138,7 +170,16 @@ int WINAPI WinMain( HINSTANCE hInstance, HINSTANCE hPrevInstance, LPTSTR lpCmdLi
 	ZeroMemory( &msg, sizeof( msg ) );
 
 	// Create the background surface
-	aSurface = d3dMgr->getD3DSurfaceFromFile("Images\\Level.png");
+	// Depending on the current game state, different images for the surface are loaded
+	if( IntroState == true)
+	{
+	aSurface = d3dMgr->getD3DSurfaceFromFile("Images\\IntroScreen.png");
+	}
+
+	if (GameState == true)
+	{
+		aSurface = d3dMgr->getD3DSurfaceFromFile("Images\\Level.png");
+	}
 
 	while( msg.message!=WM_QUIT )
 	{
