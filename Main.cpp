@@ -1,10 +1,10 @@
 
-
 #include "GameConstants.h"
 #include "cD3DManager.h"
 #include "cD3DXSpriteMgr.h"
 #include "cD3DXTexture.h"
 #include "cEnemy.h"
+#include "cD3DXFont.h"
 #include "cSprite.h"
 
 using namespace std;
@@ -26,6 +26,11 @@ vector<cEnemy*>::iterator iter;
 vector<cEnemy*>::iterator index;
 
 RECT clientBounds;
+
+cD3DXTexture* enemyTextures[4];
+char* enemyTxture[] = {"Images\\Monster", "Images\\Monster2", "Images\\Monster3", "Images\\Monster4"};
+
+float playerScore;
 
 //Bool variables used to determine the current stae of the game
 bool IntroState = true;
@@ -151,18 +156,32 @@ int WINAPI WinMain( HINSTANCE hInstance, HINSTANCE hPrevInstance, LPTSTR lpCmdLi
 	float numFrames   = 0.0f;				// Used to hold the number of frames
 	float timeElapsed = 0.0f;				// cumulative elapsed time
 
+
+
+
 	GetClientRect(wndHandle,&clientBounds);
 
 	float fpsRate = 1.0f/25.0f;
 
 	D3DXVECTOR3 aenemyPos;
 
+	int numenemys = 10;
+
+	for(int loop = 0; loop < numenemys; loop++)
+	{
+		aenemyPos = D3DXVECTOR3((float)clientBounds.right/(loop+2),(float)clientBounds.bottom/(loop+2),0);
+		aEnemy.push_back(new cEnemy());
+		aEnemy[loop]->setSpritePos(aenemyPos);
+		aEnemy[loop]->setTranslation(D3DXVECTOR2(5.0f,0.0f));
+		aEnemy[loop]->setTexture(enemyTextures[(loop % 3)]);
+	}
+
 	LPDIRECT3DSURFACE9 aSurface;				// the Direct3D surface
 	LPDIRECT3DSURFACE9 theBackbuffer = NULL;  // This will hold the back buffer
 	
 	// Initial starting position for Player
-	D3DXVECTOR3 rocketPos = D3DXVECTOR3(300,300,0);
-	cSprite thePlayer(rocketPos,d3dMgr->getTheD3DDevice(),"Images\\Player.png");
+	D3DXVECTOR3 playerPos = D3DXVECTOR3(300,300,0);
+	cSprite thePlayer(playerPos,d3dMgr->getTheD3DDevice(),"Images\\Player.png");
 
 	thePlayer.setTranslation(D3DXVECTOR2(5.0f,0.0f));
 
@@ -179,6 +198,12 @@ int WINAPI WinMain( HINSTANCE hInstance, HINSTANCE hPrevInstance, LPTSTR lpCmdLi
 	if (GameState == true)
 	{
 		aSurface = d3dMgr->getD3DSurfaceFromFile("Images\\Level.png");
+
+	// load custom font
+	cD3DXFont* gameFont = new cD3DXFont(d3dMgr->getTheD3DDevice(),hInstance, "ZOMBIE");
+
+	RECT textPos; //Creates a text box to display the player's score
+	SetRect(&textPos, 50, 10, 400, 100);
 	}
 
 	while( msg.message!=WM_QUIT )
@@ -192,19 +217,63 @@ int WINAPI WinMain( HINSTANCE hInstance, HINSTANCE hPrevInstance, LPTSTR lpCmdLi
 		else
 		{
 			// Game code goes here
-			rocketPos = D3DXVECTOR3(playerTrans.x,playerTrans.y,0);
-			thePlayer.setSpritePos(rocketPos);
+			if(GameState == true)
+			{
+			QueryPerformanceCounter((LARGE_INTEGER*)&currentTime);
+			float dt = (currentTime - previousTime)*sPC;
+			timeElapsed += dt; // Calculates amount of time elapsed since the player has started the game scene
+			
+			playerScore = timeElapsed;				// Copy the time elapsed to display as the players score
+
+			/*
+			Moves the enemy and then checks to see if it has collided with the outside of the level
+			*/
+			if(timeElapsed > fpsRate)
+			{
+				for(iter = aEnemy.begin(); iter != aEnemy.end(); ++iter)
+				{
+					(*iter)->update(timeElapsed);			// update enemy
+					aenemyPos = (*iter)->getSpritePos();  // get the position of the current enemy
+					/*
+					Checks to see if the monsters have hit the edge of the area and then changes there direction if they have
+					*/
+					if (aenemyPos.x>(clientBounds.right - 60) || aenemyPos.x < 10 )
+					{
+						(*iter)->setTranslation((*iter)->getTranslation()*(-1));
+					}
+
+					if (aenemyPos.y>(clientBounds.bottom - 40) || aenemyPos.y < 10)
+					{
+						(*iter)->setTranslation((*iter)->getTranslation()*(-1));
+					}
+
+					}
+				playerPos = D3DXVECTOR3(playerTrans.x,playerTrans.y,0);
+				thePlayer.setSpritePos(playerPos);
 
 			d3dMgr->beginRender();
 			theBackbuffer = d3dMgr->getTheBackBuffer();
 			d3dMgr->updateTheSurface(aSurface, theBackbuffer);
 			d3dMgr->releaseTheBackbuffer(theBackbuffer);
-			
+				
 			d3dxSRMgr->beginDraw();
+			vector<cEnemy*>::iterator iterB = aEnemy.begin();
+				for(iterB = aEnemy.begin(); iterB != aEnemy.end(); ++iterB)
+				{
+					d3dxSRMgr->setTheTransform((*iterB)->getSpriteTransformMatrix());  
+					d3dxSRMgr->drawSprite((*iterB)->getTexture(),NULL,NULL,NULL,0xFFFFFFFF);
+				}
+
 			d3dxSRMgr->drawSprite(thePlayer.getTexture(),NULL,NULL,&thePlayer.getSpritePos(),0xFFFFFFFF);
 			d3dxSRMgr->endDraw();
 			d3dMgr->endRender();
+
+			}
+		
+			}
+			previousTime = currentTime;
 		}
+
 	}
 	d3dxSRMgr->cleanUp();
 	d3dMgr->clean();

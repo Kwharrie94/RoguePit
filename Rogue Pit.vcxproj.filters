@@ -85,5 +85,30 @@
     <Image Include="DaggerIcon.ico">
       <Filter>Source Files</Filter>
     </Image>
+    <Image Include="Images\IntroScreen.png">
+      <Filter>Resource Files</Filter>
+    </Image>
+    <Image Include="Images\Monster4.png">
+      <Filter>Resource Files</Filter>
+    </Image>
+    <Image Include="Images\Monster2.png">
+      <Filter>Resource Files</Filter>
+    </Image>
+    <Image Include="Images\Monster3.png">
+      <Filter>Resource Files</Filter>
+    </Image>
+  </ItemGroup>
+  <ItemGroup>
+    <Media Include="Sound\Animals As Leaders - On Impulse.wav">
+      <Filter>Resource Files</Filter>
+    </Media>
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="ClassDiagram.cd" />
+  </ItemGroup>
+  <ItemGroup>
+    <Font Include="Font\ZOMBIE.TTF">
+      <Filter>Resource Files</Filter>
+    </Font>
   </ItemGroup>
 </Project>
